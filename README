@@ -1,3 +1,10 @@
 Right now just some Arduino code to allow me to control various remote controls 
 using my PC.
 
+Everything here is licenced under GPL3. A copy of the licence is included in the 
+file LICENCE in this directory.
+Copyright 2013 - John Cooper http://choffee.co.uk/
+
+# Some usefule commands
+
+mosquitto_sub -u homenet -P homenet -h 192.168.122.74 -t "/bluetooth/+/level"
