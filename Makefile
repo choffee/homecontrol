@@ -2,7 +2,7 @@ ARDUINO_DIR  = /usr/share/arduino
 
 TARGET       = CLItest
 #ARDUINO_LIBS = Ethernet Ethernet/utility SPI
-ARDUINO_LIBS = IRremote RemoteSwitch
+ARDUINO_LIBS = IRremote RemoteSwitch LiquidCrystal
 
 BOARD_TAG    = atmega328
 ARDUINO_PORT = /dev/ttyUSB0

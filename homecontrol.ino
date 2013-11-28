@@ -17,11 +17,14 @@
  *
  */
 #include <RemoteTransmitter.h>
+#include <LiquidCrystal.h>
 
 // Intantiate a new Elro remote, also use pin 11 (same transmitter!)
 ElroTransmitter elroTransmitter(11);
 // Intantiate a new ActionTransmitter remote, use pin 11
 ActionTransmitter actionTransmitter(11);
+
+LiquidCrystal lcd(10, 9, 5, 4, 3, 2);
 
 #define MAXCOMMANDLENGTH 16
 
@@ -31,6 +34,7 @@ boolean commandComplete = false;
 // List of function defined
 void getIncomingChars();
 void processCommand();
+void processDisplayCommand();
 bool validateCommand();
 bool isNumeric(char);
 void processRFcommand();
@@ -40,6 +44,9 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Hello, Incontrol v1");
   command = "";
+
+  lcd.begin(20, 4);
+  lcd.print("HomeAuto starting..");
 }
 
 void loop(){
@@ -70,6 +77,11 @@ void processCommand() {
         processRFcommand();
       }
     }
+    if ( command.charAt(0) == 'D' ) {
+      if ( command.charAt(1) == 'P' ) {
+        processDisplayCommand();
+      }
+    }
   } else {
     Serial.print("Bad Command: ");
     Serial.println(command);
@@ -96,6 +108,35 @@ void processRFcommand() {
     state = false;
   }
   elroTransmitter.sendSignal(num,set,state);
+}
+
+void processDisplayCommand() {
+  int row;
+  int col;
+  char *text[20];
+  Serial.println("Doing Display Command");
+  // 1 digit row
+  // two digits column
+  // Now read everything till the newline as text to display.
+  row = 0 + command.charAt(4);
+  col = 0 + command.charAt(6) + ( 10 * command.charAt(5));
+  // Just fix bad numbers
+  if (col > 20)  col = 20;
+  if (row > 4)  col = 4;
+  // Copy 7 to 27 to the text string
+  for ( int l = 7 ; l < 27 ; l++ ){
+    if ( command.charAt(l) == '\n' ) {
+      text[l-7 + col] = '\0';
+      break;
+    }
+    *text[l-7 + col] = command.charAt(l);
+  }
+  // Send the text to the display
+  lcd.setCursor(col, row);
+  lcd.print(millis()/1000);
+  lcd.print(*text);
+
+
 }
 
 bool validateCommand() {
