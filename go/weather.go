@@ -2,6 +2,8 @@ package main
 
 // Some of the openweathermap api
 
+// Grab the weather for York every hour and send it to mqtt
+
 import (
   "net/http"
   "log"
@@ -79,8 +81,9 @@ type WeatherData struct {
   Cod int `json: "cod"`
 }
 
-func main() {
+func get_weather() (error, WeatherData) {
   client := &http.Client{}
+  var weather WeatherData
 
   req, err := http.NewRequest("GET", "http://api.openweathermap.org/data/2.5/weather?q=York,uk&units=metric", nil)
   if err != nil {
@@ -90,15 +93,22 @@ func main() {
   resp, err := client.Do(req)
   defer resp.Body.Close()
   if resp.StatusCode == 200 {
-    var weather WeatherData
     body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-      log.Fatal(err)
+    if err == nil {
+      err = json.Unmarshal(body, &weather)
+      if err != nil {
+        return err, weather
+      }
     }
-    err = json.Unmarshal(body, &weather)
-    if err != nil {
-      log.Fatal(err)
-    }
+  }
+  return err, weather
+}
+
+func main() {
+  err, weather := get_weather()
+  if err == nil {
     log.Printf("%s: %.2f", weather.Name, weather.Main.Temp)
+  } else {
+    log.Fatal(err)
   }
 }
