@@ -9,6 +9,8 @@ import (
   "log"
   "encoding/json"
   "io/ioutil"
+  "bitbucket.org/shanehanna/mosquitto"
+  "time"
 )
 
   // Example json
@@ -105,10 +107,23 @@ func get_weather() (error, WeatherData) {
 }
 
 func main() {
-  err, weather := get_weather()
-  if err == nil {
-    log.Printf("%s: %.2f", weather.Name, weather.Main.Temp)
-  } else {
+  conn, err := mosquitto.Dial("example", "192.168.1.107:1883", true)
+  if err != nil {
     log.Fatal(err)
+  }
+  for {
+    err, weather := get_weather()
+    if err == nil {
+      log.Printf("%s: %.2f", weather.Name, weather.Main.Temp)
+      weather_json, err :=  json.Marshal(weather)
+      message, _ := mosquitto.NewMessage("/weather", weather_json)
+      err = conn.Publish(message)
+      if err != nil {
+        log.Fatal(err)
+      }
+    } else {
+      log.Fatal(err)
+    }
+    time.Sleep(time.Hour)
   }
 }
