@@ -113,28 +113,30 @@ void processRFcommand() {
 void processDisplayCommand() {
   int row;
   int col;
-  char *text[20];
+  char *disptext[20];
+  String text = String(20);
+  text = "";
   Serial.println("Doing Display Command");
   // 1 digit row
   // two digits column
   // Now read everything till the newline as text to display.
-  row = 0 + command.charAt(4);
-  col = 0 + command.charAt(6) + ( 10 * command.charAt(5));
+  row = 0 + command.charAt(3) - 48;
+  col = 0 + command.charAt(5) - 48 + ( 10 * ( 0 + command.charAt(4) - 48));
   // Just fix bad numbers
-  if (col > 20)  col = 20;
-  if (row > 4)  col = 4;
+  if (col > 20)  col = 19;
+  if (row > 4)  row = 3;
   // Copy 7 to 27 to the text string
-  for ( int l = 7 ; l < 27 ; l++ ){
-    if ( command.charAt(l) == '\n' ) {
-      text[l-7 + col] = '\0';
+  for ( int l = 6 ; l < 26 ; l++ ){
+    if ( l >= command.length()  ) {
       break;
+    } else {
+      text.concat(command.charAt(l));
     }
-    *text[l-7 + col] = command.charAt(l);
   }
   // Send the text to the display
   lcd.setCursor(col, row);
-  lcd.print(millis()/1000);
-  lcd.print(*text);
+  //lcd.print(millis()/1000);
+  lcd.print(text);
 
 
 }
