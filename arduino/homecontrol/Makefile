@@ -1,4 +1,5 @@
 ARDUINO_DIR  = /usr/share/arduino
+ARDMK_DIR     = /usr/share/arduino
 
 TARGET       = CLItest
 #ARDUINO_LIBS = Ethernet Ethernet/utility SPI
