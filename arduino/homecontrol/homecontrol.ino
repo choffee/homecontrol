@@ -49,14 +49,6 @@ void setup() {
   lcd.print("HomeAuto starting..");
 }
 
-void loop(){
-  if (Serial.available() > 0) {
-    getIncomingChars();
-  }
-  if (commandComplete == true ) {
-    processCommand();
-  }
-}
 
 // Grab all the chars from the serial port.
 void getIncomingChars() {
@@ -158,4 +150,13 @@ bool isNumeric(char character){
     return true;
   }
   return false;
+}
+
+void loop(){
+  if (Serial.available() > 0) {
+    getIncomingChars();
+  }
+  if (commandComplete == true ) {
+    processCommand();
+  }
 }
