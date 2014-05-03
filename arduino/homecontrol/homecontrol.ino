@@ -40,6 +40,13 @@ bool isNumeric(char);
 void processRFcommand();
 // End of defines
 
+const int powerSwitchPin = A3;
+const int fourSwitchPin = A4;
+const int sixSwitchPin = A5;
+
+const int switchPins[3] = {powerSwitchPin, fourSwitchPin, sixSwitchPin};
+const int numberOfSwitches = 3;
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Hello, Incontrol v1");
@@ -47,6 +54,10 @@ void setup() {
 
   lcd.begin(20, 4);
   lcd.print("HomeAuto starting..");
+
+  for (int i = 0; i < numberOfSwitches; i++) {
+      pinMode(switchPins[i], INPUT);
+  }
 }
 
 
@@ -152,6 +163,14 @@ bool isNumeric(char character){
   return false;
 }
 
+void readSwitches() {
+    for (int i = 0 ; i < numberOfSwitches ; i++) {
+        if (digitalRead(switchPins[i])) {
+            Serial.write("Pin pressed");
+        }
+    }
+}
+
 void loop(){
   if (Serial.available() > 0) {
     getIncomingChars();
@@ -159,4 +178,5 @@ void loop(){
   if (commandComplete == true ) {
     processCommand();
   }
+  readSwitches();
 }
