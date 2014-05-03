@@ -39,6 +39,7 @@ func serialReader(serialPort *io.ReadWriteCloser, conn *mosquitto.Conn) {
 		message.Write(buf[:n])
 		if bytes.Contains(buf[:n], []byte("\n")) {
 			msg := message.Bytes()
+			msg = bytes.TrimSpace(msg)
 			log.Printf("%q", msg)
 			if bytes.Contains(msg, []byte("Pin:")) {
 				sendPinPress(msg, conn)
