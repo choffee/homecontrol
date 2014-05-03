@@ -18,6 +18,7 @@
  */
 #include <RemoteTransmitter.h>
 #include <LiquidCrystal.h>
+#include <Button.h>
 
 // Intantiate a new Elro remote, also use pin 11 (same transmitter!)
 ElroTransmitter elroTransmitter(11);
@@ -40,12 +41,9 @@ bool isNumeric(char);
 void processRFcommand();
 // End of defines
 
-const int powerSwitchPin = A3;
-const int fourSwitchPin = A4;
-const int sixSwitchPin = A5;
-
-const int switchPins[3] = {powerSwitchPin, fourSwitchPin, sixSwitchPin};
-const int numberOfSwitches = 3;
+Button buttonPower = Button(A3);
+Button buttonFour = Button(A4);
+Button buttonSix = Button(A5);
 
 void setup() {
   Serial.begin(9600);
@@ -55,9 +53,6 @@ void setup() {
   lcd.begin(20, 4);
   lcd.print("HomeAuto starting..");
 
-  for (int i = 0; i < numberOfSwitches; i++) {
-      pinMode(switchPins[i], INPUT);
-  }
 }
 
 
@@ -163,40 +158,16 @@ bool isNumeric(char character){
   return false;
 }
 
-bool isSwitchPressed(int pin) {
-    if ( digitalRead(pin) ) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-char[] pinName(int pin) {
-    char pinname[20];
-    switch (pin)
-    {
-        case A3:
-            pinname = "Power";
-            break;
-        case A4:
-            pinname = "4";
-            break;
-        case A5:
-            pinname = "6"
-            break;
-        default:
-            pinname = "Unknown";
-    }
-    return pinname;
-}
-
 
 void readSwitches() {
-    for (int i = 0 ; i < numberOfSwitches ; i++) {
-        if (isSwitchPressed(switchPins[i])) {
-            Serial.write("Pin:");
-            Serial.writeln(pinName(switchPins[i]));
-        }
+    if ( buttonPower.uniquePress() ) {
+        Serial.write("Pin:Power\n");
+    }
+    if ( buttonSix.uniquePress() ) {
+        Serial.write("Pin:Six\n");
+    }
+    if ( buttonFour.uniquePress() ) {
+        Serial.write("Pin:Four\n");
     }
 }
 
