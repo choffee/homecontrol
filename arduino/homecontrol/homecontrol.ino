@@ -163,10 +163,39 @@ bool isNumeric(char character){
   return false;
 }
 
+bool isSwitchPressed(int pin) {
+    if ( digitalRead(pin) ) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+char[] pinName(int pin) {
+    char pinname[20];
+    switch (pin)
+    {
+        case A3:
+            pinname = "Power";
+            break;
+        case A4:
+            pinname = "4";
+            break;
+        case A5:
+            pinname = "6"
+            break;
+        default:
+            pinname = "Unknown";
+    }
+    return pinname;
+}
+
+
 void readSwitches() {
     for (int i = 0 ; i < numberOfSwitches ; i++) {
-        if (digitalRead(switchPins[i])) {
-            Serial.write("Pin pressed");
+        if (isSwitchPressed(switchPins[i])) {
+            Serial.write("Pin:");
+            Serial.writeln(pinName(switchPins[i]));
         }
     }
 }
