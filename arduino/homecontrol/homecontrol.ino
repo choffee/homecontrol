@@ -18,13 +18,15 @@
  */
 #include <RemoteTransmitter.h>
 #include <LiquidCrystal.h>
+#include <SPI.h>
+#include <RF24.h>
 
 // Intantiate a new Elro remote, also use pin 11 (same transmitter!)
 ElroTransmitter elroTransmitter(11);
 // Intantiate a new ActionTransmitter remote, use pin 11
 ActionTransmitter actionTransmitter(11);
 
-LiquidCrystal lcd(10, 9, 5, 4, 3, 2);
+LiquidCrystal lcd(8, 7, 5, 4, 3, 2);
 
 #define MAXCOMMANDLENGTH 16
 
@@ -39,6 +41,13 @@ bool validateCommand();
 bool isNumeric(char);
 void processRFcommand();
 // End of defines
+
+// Set up nRF24L01 radio on SPI bus plus pins 9 & 10
+
+RF24 radio(9,10);
+// Radio pipe address
+const uint64_t nrfSensorPipe            = 0xF0F0F0F0E1LL;
+
 
 const int powerSwitchPin = A3;
 const int fourSwitchPin = A4;
@@ -58,6 +67,27 @@ void setup() {
   for (int i = 0; i < numberOfSwitches; i++) {
       pinMode(switchPins[i], INPUT);
   }
+  //
+  // Setup and configure rf radio
+  //
+
+  radio.begin();
+
+  // optionally, increase the delay between retries & # of retries
+  radio.setRetries(15,15);
+
+  // optionally, reduce the payload size.  seems to
+  // improve reliability
+  //radio.setPayloadSize(8);
+
+  //
+  // Open pipes to other nodes for communication
+  //
+
+
+  // Open the pipe for listenting for sensors
+  radio.openReadingPipe(1,nrfSensorPipe);
+  radio.startListening();
 }
 
 
@@ -170,6 +200,26 @@ void readSwitches() {
     }
 }
 
+void readNrf24() {
+    char receivedPayload[31];
+    uint8_t len = 0;
+    uint8_t pipe = 0;
+
+    if ( radio.available(&pipe) ) {
+        bool done = false;
+        while (!done) {
+            // Fetch the payload, and see if this was the last one.
+            len = radio.getDynamicPayloadSize();
+            done = radio.read( &receivedPayload, len );
+            Serial.write("RF P:");
+            Serial.write(pipe);
+            Serial.write(" P:");
+            Serial.write(receivedPayload);
+            Serial.write("\n");
+        }
+    }
+}
+
 void loop(){
   if (Serial.available() > 0) {
     getIncomingChars();
@@ -178,4 +228,5 @@ void loop(){
     processCommand();
   }
   readSwitches();
+  readNrf24();
 }
