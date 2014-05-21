@@ -116,7 +116,6 @@ void processRFcommand() {
 void processDisplayCommand() {
   int row;
   int col;
-  char *disptext[20];
   String text = String(20);
   text = "";
   Serial.println("Doing Display Command");
@@ -129,7 +128,7 @@ void processDisplayCommand() {
   if (col > 20)  col = 19;
   if (row > 4)  row = 3;
   // Copy 7 to 27 to the text string
-  for ( int l = 6 ; l < 26 ; l++ ){
+  for ( uint8_t l = 6 ; l < 26 ; l++ ){
     if ( l >= command.length()  ) {
       break;
     } else {
