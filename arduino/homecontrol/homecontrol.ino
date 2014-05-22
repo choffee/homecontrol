@@ -20,6 +20,7 @@
 #include <LiquidCrystal.h>
 #include <SPI.h>
 #include <RF24.h>
+#include <Button.h>
 
 // Intantiate a new Elro remote, also use pin 11 (same transmitter!)
 ElroTransmitter elroTransmitter(11);
@@ -55,6 +56,10 @@ const int sixSwitchPin = A5;
 
 const int switchPins[3] = {powerSwitchPin, fourSwitchPin, sixSwitchPin};
 const int numberOfSwitches = 3;
+
+Button buttonPower = Button(A3);
+Button buttonFour = Button(A4);
+Button buttonSix = Button(A5);
 
 void setup() {
   Serial.begin(9600);
@@ -192,11 +197,16 @@ bool isNumeric(char character){
   return false;
 }
 
+
 void readSwitches() {
-    for (int i = 0 ; i < numberOfSwitches ; i++) {
-        if (digitalRead(switchPins[i])) {
-            Serial.write("Pin pressed");
-        }
+    if ( buttonPower.uniquePress() ) {
+        Serial.write("Pin:Power\n");
+    }
+    if ( buttonSix.uniquePress() ) {
+        Serial.write("Pin:Six\n");
+    }
+    if ( buttonFour.uniquePress() ) {
+        Serial.write("Pin:Four\n");
     }
 }
 
