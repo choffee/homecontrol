@@ -23,11 +23,11 @@
 #include <Button.h>
 
 // Intantiate a new Elro remote, also use pin 11 (same transmitter!)
-ElroTransmitter elroTransmitter(11);
+ElroTransmitter elroTransmitter(8);
 // Intantiate a new ActionTransmitter remote, use pin 11
-ActionTransmitter actionTransmitter(11);
+ActionTransmitter actionTransmitter(8);
 
-LiquidCrystal lcd(8, 7, 5, 4, 3, 2);
+LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
 
 #define MAXCOMMANDLENGTH 16
 
@@ -221,9 +221,11 @@ void readNrf24() {
             // Fetch the payload, and see if this was the last one.
             len = radio.getDynamicPayloadSize();
             done = radio.read( &receivedPayload, len );
-            Serial.write("RF P:");
-            Serial.write(pipe);
-            Serial.write(" P:");
+            Serial.write("RF Pipe:");
+            char temp[2];
+            sprintf(temp, "%d", pipe)
+            Serial.write(temp);
+            Serial.write(" Data:");
             Serial.write(receivedPayload);
             Serial.write("\n");
         }
