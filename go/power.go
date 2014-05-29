@@ -115,7 +115,7 @@ func main() {
         log.Fatal(err)
     }
 
-    filter, err := MQTT.NewTopicFilter("/homeauto/power/+", 1)
+    powerFilter, err := MQTT.NewTopicFilter("/homeauto/power/+", 1)
     if err != nil {
         log.Fatal(err)
     }
@@ -135,7 +135,7 @@ func main() {
                 }
             }
         }
-    }, filter)
+    }, powerFilter)
 
     if err != nil {
         log.Fatal(err)
