@@ -8,26 +8,23 @@ import (
 
     "bytes"
 
-    "bitbucket.org/shanehanna/mosquitto"
+    MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
     "github.com/tarm/goserial"
 )
 
-func sendPinPress(buf []byte, conn *mosquitto.Conn) {
+func sendPinPress(buf []byte, client *MQTT.MqttClient) {
     bufSplit := bytes.Split(buf, []byte(":"))
     if len(bufSplit) < 2 {
         log.Print(buf)
         return
     }
     pin := bufSplit[1]
-    m, _ := mosquitto.NewMessage("/remote/desk/events", pin)
+    m := MQTT.NewMessage(pin)
     log.Printf("(%s) -> /remote/desk/events\n", m.Payload)
-    err := conn.Publish(m)
-    if err != nil {
-        log.Print("Failed to publish pin press message")
-    }
+    _ = client.PublishMessage("/remote/desk/events", m)
 }
 
-func readRFData(buf []byte, conn *mosquitto.Conn) {
+func readRFData(buf []byte, client *MQTT.MqttClient) {
     readings := bytes.Split(buf, []byte(";"))
     sensor := bytes.Split(readings[0], []byte("="))[1]
     for l := 1; l < len(readings); l++ {
@@ -35,16 +32,13 @@ func readRFData(buf []byte, conn *mosquitto.Conn) {
         dev := readingpair[0]
         value := readingpair[1]
         location := fmt.Sprintf("/sensor/%s/%s", sensor, dev)
-        m, _ := mosquitto.NewMessage(location, value)
+        m := MQTT.NewMessage(value)
         log.Printf("%s", m.Payload)
-        err := conn.Publish(m)
-        if err != nil {
-            log.Print("Failed to send message")
-        }
+        _ = client.PublishMessage(location, m)
     }
 }
 
-func sendRFMessage(buf []byte, conn *mosquitto.Conn) {
+func sendRFMessage(buf []byte, client *MQTT.MqttClient) {
     // RF Pipe:1 Data:RemoteID=0;Moisture_0=973
     bufSplit := bytes.Split(buf, []byte(" "))
     if len(bufSplit) < 2 {
@@ -60,14 +54,14 @@ func sendRFMessage(buf []byte, conn *mosquitto.Conn) {
             log.Printf("Pipe %s", chunkSplit[1])
         case "Data":
             log.Printf("Data - %s", chunkSplit[1])
-            readRFData(chunkSplit[1], conn)
+            readRFData(chunkSplit[1], client)
         default:
             log.Print("Bad line")
         }
     }
 }
 
-func serialReader(serialPort *io.ReadWriteCloser, conn *mosquitto.Conn) {
+func serialReader(serialPort *io.ReadWriteCloser, client *MQTT.MqttClient) {
     // Reads continuisly from a serial port and sends whole line back
     buf := make([]byte, 128)
     var message bytes.Buffer
@@ -83,10 +77,10 @@ func serialReader(serialPort *io.ReadWriteCloser, conn *mosquitto.Conn) {
             msg = bytes.TrimSpace(msg)
             log.Printf("%q", msg)
             if bytes.HasPrefix(msg, []byte("Pin:")) {
-                sendPinPress(msg, conn)
+                sendPinPress(msg, client)
             }
             if bytes.HasPrefix(msg, []byte("RF ")) {
-                sendRFMessage(msg, conn)
+                sendRFMessage(msg, client)
             }
             message.Reset()
         }
@@ -101,29 +95,47 @@ func main() {
     }
 
     // Now setup the mqtt connection
-    conn, _ := mosquitto.Dial("powercontroller", "localhost:1883", true)
-    go conn.Listen()
+    opts := MQTT.NewClientOptions()
+    opts.SetBroker("tcp://localhost:1883")
+    opts.SetClientId("powercontroller")
+    opts.SetCleanSession(true)
+    opts.SetTraceLevel(MQTT.Off)
+    client := MQTT.NewClient(opts)
+    _, err = client.Start()
+    if err != nil {
+        log.Fatal(err)
+    } else {
+        log.Printf("Connected as powercontroller to 127.0.0.1:1883")
+    }
 
-    go serialReader(&s, &conn)
+    go serialReader(&s, client)
 
     device_re, err := regexp.Compile(`/homeauto/power/([^/]+)`)
     if err != nil {
         log.Fatal(err)
     }
-    err = conn.HandleFunc("/homeauto/power/#", 2, func(c *mosquitto.Conn, m mosquitto.Message) {
-        log.Printf("foo <- (%s)\nfoo -> bar(%s)\n", m.Payload, m.Payload)
-        rec := device_re.FindStringSubmatch(m.Topic)
-        log.Printf("%v", rec[1])
-        // Check the length of rec here XXX
-        device := rec[1]
-        if string(m.Payload) == "on" || string(m.Payload) == "off" {
-            msg := "RF  " + device + string(m.Payload) + "\n"
-            _, err = s.Write([]byte(msg))
-            if err != nil {
-                log.Fatal(err)
+
+    filter, err := MQTT.NewTopicFilter("/homeauto/power/+", 1)
+    if err != nil {
+        log.Fatal(err)
+    }
+    client.StartSubscription(func(client *MQTT.MqttClient, msg MQTT.Message) {
+        payload := msg.Payload()
+        topic := msg.Topic()
+        log.Printf("Topic(%s),Payload(%s)\n", topic, payload)
+        rec := device_re.FindStringSubmatch(topic)
+        if len(rec) > 0 {
+            // Check the length of rec here XXX
+            device := rec[1]
+            if string(payload) == "on" || string(payload) == "off" {
+                msg := "RF  " + device + string(payload) + "\n"
+                _, err = s.Write([]byte(msg))
+                if err != nil {
+                    log.Fatal(err)
+                }
             }
         }
-    })
+    }, filter)
 
     if err != nil {
         log.Fatal(err)
