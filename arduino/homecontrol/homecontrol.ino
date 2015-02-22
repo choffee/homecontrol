@@ -18,13 +18,16 @@
  */
 #include <RemoteTransmitter.h>
 #include <LiquidCrystal.h>
+#include <SPI.h>
+#include <RF24.h>
+#include <Button.h>
 
 // Intantiate a new Elro remote, also use pin 11 (same transmitter!)
-ElroTransmitter elroTransmitter(11);
+ElroTransmitter elroTransmitter(8);
 // Intantiate a new ActionTransmitter remote, use pin 11
-ActionTransmitter actionTransmitter(11);
+ActionTransmitter actionTransmitter(8);
 
-LiquidCrystal lcd(10, 9, 5, 4, 3, 2);
+LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
 
 #define MAXCOMMANDLENGTH 16
 
@@ -40,6 +43,24 @@ bool isNumeric(char);
 void processRFcommand();
 // End of defines
 
+// Set up nRF24L01 radio on SPI bus plus pins 9 & 10
+
+RF24 radio(9,10);
+// Radio pipe address
+const uint64_t nrfSensorPipe            = 0xF0F0F0F0E1LL;
+
+
+const int powerSwitchPin = A3;
+const int fourSwitchPin = A4;
+const int sixSwitchPin = A5;
+
+const int switchPins[3] = {powerSwitchPin, fourSwitchPin, sixSwitchPin};
+const int numberOfSwitches = 3;
+
+Button buttonPower = Button(A3);
+Button buttonFour = Button(A4);
+Button buttonSix = Button(A5);
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Hello, Incontrol v1");
@@ -47,16 +68,33 @@ void setup() {
 
   lcd.begin(20, 4);
   lcd.print("HomeAuto starting..");
+
+  for (int i = 0; i < numberOfSwitches; i++) {
+      pinMode(switchPins[i], INPUT);
+  }
+  //
+  // Setup and configure rf radio
+  //
+
+  radio.begin();
+
+  // optionally, increase the delay between retries & # of retries
+  radio.setRetries(15,15);
+
+  // optionally, reduce the payload size.  seems to
+  // improve reliability
+  //radio.setPayloadSize(8);
+
+  //
+  // Open pipes to other nodes for communication
+  //
+
+
+  // Open the pipe for listenting for sensors
+  radio.openReadingPipe(1,nrfSensorPipe);
+  radio.startListening();
 }
 
-void loop(){
-  if (Serial.available() > 0) {
-    getIncomingChars();
-  }
-  if (commandComplete == true ) {
-    processCommand();
-  }
-}
 
 // Grab all the chars from the serial port.
 void getIncomingChars() {
@@ -113,7 +151,6 @@ void processRFcommand() {
 void processDisplayCommand() {
   int row;
   int col;
-  char *disptext[20];
   String text = String(20);
   text = "";
   Serial.println("Doing Display Command");
@@ -126,7 +163,7 @@ void processDisplayCommand() {
   if (col > 20)  col = 19;
   if (row > 4)  row = 3;
   // Copy 7 to 27 to the text string
-  for ( int l = 6 ; l < 26 ; l++ ){
+  for ( uint8_t l = 6 ; l < 26 ; l++ ){
     if ( l >= command.length()  ) {
       break;
     } else {
@@ -158,4 +195,50 @@ bool isNumeric(char character){
     return true;
   }
   return false;
+}
+
+
+void readSwitches() {
+    if ( buttonPower.uniquePress() ) {
+        Serial.write("Pin:Power\n");
+    }
+    if ( buttonSix.uniquePress() ) {
+        Serial.write("Pin:Six\n");
+    }
+    if ( buttonFour.uniquePress() ) {
+        Serial.write("Pin:Four\n");
+    }
+}
+
+void readNrf24() {
+    char receivedPayload[31];
+    uint8_t len = 0;
+    uint8_t pipe = 0;
+
+    if ( radio.available(&pipe) ) {
+        bool done = false;
+        while (!done) {
+            // Fetch the payload, and see if this was the last one.
+            len = radio.getDynamicPayloadSize();
+            done = radio.read( &receivedPayload, len );
+            Serial.write("RF Pipe:");
+            char temp[2];
+            sprintf(temp, "%d", pipe)
+            Serial.write(temp);
+            Serial.write(" Data:");
+            Serial.write(receivedPayload);
+            Serial.write("\n");
+        }
+    }
+}
+
+void loop(){
+  if (Serial.available() > 0) {
+    getIncomingChars();
+  }
+  if (commandComplete == true ) {
+    processCommand();
+  }
+  readSwitches();
+  readNrf24();
 }

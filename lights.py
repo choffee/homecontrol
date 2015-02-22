@@ -21,9 +21,11 @@ print ser.readline()
 
 if sys.argv[1] == 'on':
   ser.write('RF  A2on\n')
+  ser.write('RF  B2on\n')
   print ser.readline()
 elif sys.argv[1] == 'off':
   ser.write('RF  A2off\n')
+  ser.write('RF  B2off\n')
 else:
   print "Expects on or off as argument"
 

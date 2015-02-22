@@ -8,3 +8,5 @@ Copyright 2013 - John Cooper http://choffee.co.uk/
 # Some usefule commands
 
 mosquitto_sub -u homenet -P homenet -h 192.168.122.74 -t "/bluetooth/+/level"
+
+mosquitto_pub -h 192.168.1.105 -t /homeauto/power/A2 -m on
