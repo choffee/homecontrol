@@ -89,14 +89,14 @@ void loop(void)
     // Wake the reader
     digitalWrite(sensor_power_pin, HIGH);
     // Sleep for a bit to make sure it's awake
-    delay(200);
+    delay(400);
     // Get a reading
     sensorValue = analogRead(sensor_pin);
     // Turn off the power
     digitalWrite(sensor_power_pin, LOW);
     // Send that down the pipe
     printf("Sensor reads: %hu\n", sensorValue);
-    char outBuffer[32]="RemoteID=0 ";
+    char outBuffer[32]="RemoteID=0;";
     char temp[5];
     strcat(outBuffer, "Moisture_0=");
     sprintf(temp, "%d", sensorValue);
