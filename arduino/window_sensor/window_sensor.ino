@@ -2,7 +2,7 @@
 #include "DHT.h"
 
 
-#define RELAY_0_PIN 0
+#define RELAY_0_PIN 2
 #define DHT_PIN 5
 #define SOIL_POWER_PIN 7
 #define SOIL_0_PIN A0
