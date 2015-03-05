@@ -19,16 +19,23 @@ void setup() {
   pinMode(8, OUTPUT);
   digitalWrite(8, HIGH);
   Serial.begin(115200);
+  Serial.println("");
+  delay(2000);
   Serial.print("+++");
-  delay(1000);
+  delay(2000);
+  //delay(1000);
   // Setup some things
   //http://openmicros.org/index.php/articles/88-%C2%AD%E2%80%90ciseco-%C2%AD%E2%80%90product-%C2%AD%E2%80%90documentation/260-%C2%AD%E2%80%90srf-%C2%AD%E2%80%90configuration
   // Set encryption key
   Serial.println("ATEA HOMEAUTO");
   // Turn on encryption
-  Serial.println("ATEE");
+  Serial.println("ATEE1");
   // Set the PAN ID
-  Serial.println("ATID 3489");
+  Serial.println("ATID3489");
+  // Put the led into RSSI mode
+  Serial.println("ATLI R");
+  // Apply the config
+  Serial.println("ATAC");
   // Exit config mode
   Serial.println("ATDN");
   // Comment out above for default serial
