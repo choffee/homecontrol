@@ -3,8 +3,11 @@ package main
 import (
     "fmt"
     "io"
+    "io/ioutil"
     "log"
     "regexp"
+    "crypto/tls"
+    "crypto/x509"
 
     "bytes"
 
@@ -33,7 +36,7 @@ func readRFData(buf []byte, client *MQTT.MqttClient) {
         value := readingpair[1]
         location := fmt.Sprintf("/sensor/%s/%s", sensor, dev)
         m := MQTT.NewMessage(value)
-        log.Printf("%s", m.Payload)
+        log.Printf("%s", m.Payload())
         _ = client.PublishMessage(location, m)
     }
 }
@@ -96,8 +99,23 @@ func main() {
 
     // Now setup the mqtt connection
     opts := MQTT.NewClientOptions()
-    opts.SetBroker("tcp://localhost:1883")
+    //opts.SetBroker("tcp://localhost:1883")
+    opts.SetBroker("tls://mosquitto.choffee.co.uk:8883")
     opts.SetClientId("powercontroller")
+    opts.SetUsername("inhouse")
+    opts.SetPassword("in_H77se")
+
+    mTLSConfig := &tls.Config {
+    }
+
+    certs := x509.NewCertPool()
+    pemData, err := ioutil.ReadFile("ca.pem")
+    if err != nil {
+        log.Fatal("Failed to open ssl CA cert")
+    }
+    certs.AppendCertsFromPEM(pemData)
+    mTLSConfig.RootCAs = certs
+    opts.SetTlsConfig(mTLSConfig)
     opts.SetCleanSession(true)
     opts.SetTraceLevel(MQTT.Off)
     client := MQTT.NewClient(opts)
