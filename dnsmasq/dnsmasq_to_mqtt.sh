@@ -14,6 +14,6 @@ tstamp="`date '+%Y-%m-%d %H:%M:%S'`"
 
 
 topic="network/dhcp/${mac}"
-payload="{\"operation\":\"${op}\", \"ip\":\"${ip}\", \"timestamp\":\"${tstamp}\" \"hostname\":\"${hostname}\"}"
+payload="{\"operation\":\"${op}\", \"ip\":\"${ip}\", \"timestamp\":\"${tstamp}\", \"hostname\":\"${hostname}\"}"
 
 mosquitto_pub -h mosquitto.choffee.co.uk -u inhouse -P in_H77se -t "${topic}" -m "${payload}" -r
